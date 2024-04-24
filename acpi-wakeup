@@ -1,0 +1,49 @@
+#!/bin/bash
+set -e
+
+usage() {
+    echo "$0 status|enable|disable ACPI_NAME"
+}
+
+status() {
+    local NAME="$1"
+    # shellcheck disable=SC2155
+    local result="$(awk '$1 == "'"$NAME"'" { print $3 }' "$FILE")"
+    case "$result" in
+        '*enabled')
+            echo enabled
+            ;;
+        '*disabled')
+            echo disabled
+            ;;
+        *)
+            exit 69
+            ;;
+    esac
+}
+
+if [ $# != 2 ]; then
+    usage
+    exit 64
+fi
+
+ACTION="$1"
+TARGET=$2
+FILE=/proc/acpi/wakeup
+
+STATUS=$(status "$TARGET")
+
+case "$ACTION" in
+    status)
+        echo "$STATUS"
+        ;;
+    enable | disable)
+        if [ "$STATUS" != "$ACTION"d ]; then
+            echo "$TARGET" > $FILE
+        fi
+        ;;
+    *)
+        usage
+        ;;
+esac
+
